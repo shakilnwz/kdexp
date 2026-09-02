@@ -1,0 +1,10 @@
+[1]
+Description=Auto Maximize Main Work Applications
+wmclass=ghostty|google-chrome|brave-browser|firefox|jetbrains-phpstorm|zed|dev.zed.Zed|obsidian
+wmclasscomplete=false
+wmclassmatch=3
+types=1
+maximizehoriz=true
+maximizehorizrule=2
+maximizevert=true
+maximizevertrule=2

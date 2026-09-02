@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# kdexp-nuke: 100% clean-up of all kdexp configs, symlinks, and browser data
+# Leaves the shared office machine in a zero-trace, clean state.
+# ==============================================================================
+set -euo pipefail
+
+DOTFILES="${DOTFILES_DIR:-$HOME/.kdexp}"
+
+echo "⚠️  WARNING: This will purge all kdexp symlinks, browser cookies, sessions, and data."
+read -rp "Are you sure you want to proceed? [y/N]: " confirm
+if [[ "${confirm,,}" != "y" ]]; then
+    echo "Aborted."
+    exit 0
+fi
+
+echo "==> Terminating running browser and sessionizer processes..."
+pkill -f "kdexp-browser" 2>/dev/null || true
+pkill -f "herdr-sessionizer" 2>/dev/null || true
+pkill -f "tmux-sessionizer" 2>/dev/null || true
+
+echo "==> Removing symlinks from ~/.config, ~/.local/bin, ~/.local/share/applications..."
+rm -f "$HOME/.config/starship.toml" \
+      "$HOME/.config/ghostty/config" \
+      "$HOME/.config/herdr/config.toml" \
+      "$HOME/.config/svi" \
+      "$HOME/.config/autostart/remap-caps.desktop" \
+      "$HOME/.local/share/applications/herdr-sessionizer.desktop" \
+      "$HOME/.local/share/applications/herdr-dual.desktop" \
+      "$HOME/.local/share/applications/tmux-sessionizer.desktop" \
+      "$HOME/.local/share/applications/herdr.desktop" \
+      "$HOME/.local/share/applications/kdexp-browser.desktop"
+
+for f in "$DOTFILES/local/bin/"*; do
+    [[ -f "$f" ]] && rm -f "$HOME/.local/bin/${f##*/}"
+done
+rm -f "$HOME/.local/bin/bat" "$HOME/.local/bin/fd"
+
+echo "==> Cleaning ~/.bashrc managed block..."
+if [[ -f "$HOME/.bashrc" ]]; then
+    tmp=$(mktemp)
+    awk '
+        index($0, "# >>> kdexp dotfiles >>>") { skip=1; next }
+        index($0, "# <<< kdexp dotfiles <<<") { skip=0; next }
+        !skip { print }
+    ' "$HOME/.bashrc" > "$tmp"
+    cat "$tmp" > "$HOME/.bashrc"
+    rm -f "$tmp"
+fi
+
+if [[ -f "$HOME/.zshrc" ]]; then
+    tmp=$(mktemp)
+    awk '
+        index($0, "# >>> kdexp dotfiles >>>") { skip=1; next }
+        index($0, "# <<< kdexp dotfiles <<<") { skip=0; next }
+        !skip { print }
+    ' "$HOME/.zshrc" > "$tmp"
+    cat "$tmp" > "$HOME/.zshrc"
+    rm -f "$tmp"
+fi
+
+echo "==> Wiping isolated data directory (~/.kdexp/data)..."
+rm -rf "$DOTFILES/data"
+
+echo ""
+echo "✨ Clean-up complete! All symlinks, browser cookies, and sessions have been purged."
+echo "If you wish to remove the repository folder completely, run:"
+echo "   rm -rf $DOTFILES"

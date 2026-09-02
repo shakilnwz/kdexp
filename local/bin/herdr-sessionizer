@@ -12,8 +12,15 @@ fi
 if [[ $# -ge 1 && -n "${1:-}" ]]; then
     selected="$1"
 else
+    # Build list of existing search candidate directories
+    search_dirs=()
+    for d in "$HOME/.kdexp" "$HOME/.dotfiles" "$HOME/code" "$HOME/Backup" "$HOME/Documents" "$HOME/Downloads" "$HOME/.local/bin" "$HOME/.config"; do
+        [[ -d "$d" ]] && search_dirs+=("$d")
+    done
+    [[ ${#search_dirs[@]} -eq 0 ]] && search_dirs=("$HOME")
+
     selected=$(
-        find ~/.dotfiles ~/code ~/Backup ~/Documents ~/Downloads ~/.local/bin ~/.config -mindepth 0 -maxdepth 5 \( -name .git -o -name node_modules -o -name .venv -o -name target \) -prune -o -print 2>/dev/null |
+        find "${search_dirs[@]}" -mindepth 0 -maxdepth 5 \( -name .git -o -name node_modules -o -name .venv -o -name target \) -prune -o -print 2>/dev/null |
             sed "s|$HOME|~|" |
             fzf --preview '[ -f {} ] && head -n 200 {} 2>/dev/null || [ -f {}/README.md ] && cat {}/README.md || [ -f {}/readme.md ] && cat {}/readme.md || [ -f {}/index.html ] && cat {}/index.html || echo "Path: {}"' --preview-window right:50%:wrap
     )
@@ -72,8 +79,12 @@ if $DUAL_MODE; then
     ensure_server "--session editor"
     ensure_workspace "--session editor"
     
-    # Open the second native window perfectly via Omarchy's default terminal launcher
-    xdg-terminal-exec -- herdr --session editor &
+    # Launch second window in Ghostty directly
+    if command -v ghostty >/dev/null 2>&1; then
+        ghostty -e herdr --session editor &
+    else
+        x-terminal-emulator -e herdr --session editor &
+    fi
 fi
 
 # 7. Attach the current terminal to the Default Session

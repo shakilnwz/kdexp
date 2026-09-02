@@ -1,0 +1,41 @@
+FROM ubuntu:26.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install minimal KDE Plasma desktop, Xvfb, VNC, noVNC, and test tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    plasma-desktop \
+    kwin-x11 \
+    konsole \
+    dbus-x11 \
+    xvfb \
+    x11vnc \
+    novnc \
+    websockify \
+    bash \
+    git \
+    curl \
+    jq \
+    tmux \
+    fzf \
+    bat \
+    fd-find \
+    ripgrep \
+    x11-xkb-utils \
+    xcape \
+    neovim \
+    sudo \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root test user
+RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER testuser
+ENV HOME=/home/testuser
+WORKDIR /home/testuser
+
+EXPOSE 6080
+
+CMD ["/bin/bash", "/home/testuser/dotfiles/tests/entrypoint-gui.sh"]

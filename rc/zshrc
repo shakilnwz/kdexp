@@ -1,11 +1,11 @@
-# Custom configuration & aliases
-alias vi="nvim"
-alias svi='NVIM_APPNAME="svi" nvim'
-alias ta="tmux attach"
-alias hd="herdr"
-alias ts='tmux new-session'
-alias yz='yazi'
-alias lg='lazygit'
-alias ld='lazydocker'
-alias agx='agy --dangerously-skip-permissions'
-bindkey -s '^\' 'herdr-sessionizer\n'
+# Zsh configuration for kdexp
+DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.kdexp}"
+if [[ -f "$DOTFILES_DIR/rc/aliases.sh" ]]; then
+    source "$DOTFILES_DIR/rc/aliases.sh"
+elif [[ -f "$HOME/.config/kdexp/rc/aliases.sh" ]]; then
+    source "$HOME/.config/kdexp/rc/aliases.sh"
+fi
+
+if command -v herdr-sessionizer >/dev/null 2>&1; then
+    bindkey -s '^\' 'herdr-sessionizer\n'
+fi

@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# kdexp-browser: Sandboxed Chrome/Chromium Launcher
+# Confines 100% of cookies, sessions, history, and cache to ~/.kdexp/data/browser
+# ==============================================================================
+set -euo pipefail
+
+DATA_DIR="${KDEXP_DATA_DIR:-$HOME/.kdexp/data/browser}"
+CACHE_DIR="${KDEXP_CACHE_DIR:-$HOME/.kdexp/data/browser-cache}"
+mkdir -p "$DATA_DIR" "$CACHE_DIR"
+
+find_browser() {
+    if command -v google-chrome-stable >/dev/null 2>&1; then
+        echo "google-chrome-stable"
+    elif command -v google-chrome >/dev/null 2>&1; then
+        echo "google-chrome"
+    elif command -v chromium-browser >/dev/null 2>&1; then
+        echo "chromium-browser"
+    elif command -v chromium >/dev/null 2>&1; then
+        echo "chromium"
+    else
+        echo "google-chrome"
+    fi
+}
+
+BROWSER_BIN="$(find_browser)"
+
+if ! command -v "$BROWSER_BIN" >/dev/null 2>&1; then
+    echo "Error: Neither Google Chrome nor Chromium was found in PATH." >&2
+    echo "Please install Chrome or Chromium to use the sandboxed browser." >&2
+    exit 1
+fi
+
+exec "$BROWSER_BIN" \
+    --user-data-dir="$DATA_DIR" \
+    --disk-cache-dir="$CACHE_DIR" \
+    --no-first-run \
+    --no-default-browser-check \
+    "$@"

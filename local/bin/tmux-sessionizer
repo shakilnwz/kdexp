@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
+set -euo pipefail
+
 switch_to() {
-    if [[ -z $TMUX ]]; then
+    if [[ -z "${TMUX:-}" ]]; then
         tmux attach-session -t "$1"
     else
         tmux switch-client -t "$1"
@@ -19,26 +21,34 @@ hydrate() {
     fi
 }
 
-if [[ $# -eq 1 ]]; then
-    selected=$1
+BAT_CMD=$(command -v bat 2>/dev/null || command -v batcat 2>/dev/null || echo "cat")
+
+if [[ $# -ge 1 && -n "${1:-}" ]]; then
+    selected="$1"
 else
+    search_dirs=()
+    for d in "$HOME/.kdexp" "$HOME/.dotfiles" "$HOME/code" "$HOME/Backup" "$HOME/Documents" "$HOME/Downloads" "$HOME/.local/bin" "$HOME/.config"; do
+        [[ -d "$d" ]] && search_dirs+=("$d")
+    done
+    [[ ${#search_dirs[@]} -eq 0 ]] && search_dirs=("$HOME")
+
     selected=$(
-        find ~/.dotfiles ~/code ~/Backup ~/Documents ~/Downloads ~/.local/bin ~/.config -mindepth 0 -maxdepth 5 \( -name .git -o -name node_modules -o -name .venv -o -name target \) -prune -o -type d -print 2>/dev/null |
+        find "${search_dirs[@]}" -mindepth 0 -maxdepth 5 \( -name .git -o -name node_modules -o -name .venv -o -name target \) -prune -o -type d -print 2>/dev/null |
             sed "s|$HOME|~|" |
-            fzf --preview '[ -f {}/README.md ] && bat --color=always {}/README.md || [ -f {}/readme.md ] && bat --color=always {}/readme.md || [ -f {}/index.html ] && bat --color=always {}/index.html || echo "No README.md or index.html found in {}"' --preview-window right:50%:wrap
+            fzf --preview "[ -f {}/README.md ] && $BAT_CMD --color=always {}/README.md || [ -f {}/readme.md ] && $BAT_CMD --color=always {}/readme.md || [ -f {}/index.html ] && $BAT_CMD --color=always {}/index.html || echo 'No README.md or index.html found in {}'" --preview-window right:50%:wrap
     )
     selected="${selected/#\~/$HOME}"
 fi
 
-if [[ -z $selected ]]; then
+if [[ -z "${selected:-}" ]]; then
     exit 0
 fi
 
 selected=$(realpath -- "$selected")
 selected_name=$(basename "$selected" | tr . _)
-tmux_running=$(pgrep tmux)
+tmux_running=$(pgrep tmux || true)
 
-if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
+if [[ -z "${TMUX:-}" ]] && [[ -z "$tmux_running" ]]; then
     tmux new-session -s "$selected_name" -c "$selected"
     hydrate "$selected_name" "$selected"
     exit 0

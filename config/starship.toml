@@ -1,32 +1,47 @@
-add_newline = true
-command_timeout = 200
-format = "[$directory$git_branch$git_status]($style)$character"
+# Starship Prompt Configuration (SNXZ Theme)
+format = """
+[┌─](bold #5f6167)$directory$git_branch$git_status$package$nodejs$rust$golang$php
+[└─>](bold #7186fd) """
 
-[character]
-error_symbol = "[✗](bold blue)"
-success_symbol = "[❯](bold blue)"
+add_newline = false
 
 [directory]
-truncation_length = 2
-truncation_symbol = "…/"
-repo_root_style = "bold blue"
-repo_root_format = "[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
+style = "bold #00cfe8"
+truncation_length = 3
+truncate_to_repo = true
+home_symbol = "~"
 
 [git_branch]
-format = "[ $branch ]($style) "
-style = "bold black bg:blue"
+style = "bold #b388ff"
+symbol = " "
 
 [git_status]
-format     = '[$all_status]($style)'
-style      = "blue"
-ahead      = "⇡${count} "
-diverged   = "⇕⇡${ahead_count}⇣${behind_count} "
-behind     = "⇣${count} "
-conflicted = " "
-up_to_date = " "
-untracked  = "? "
-modified   = " "
-stashed    = ""
-staged     = ""
-renamed    = ""
-deleted    = ""
+style = "bold #ff4d6d"
+modified = "!"
+untracked = "?"
+staged = "+"
+deleted = "✘"
+
+[package]
+style = "bold #ffd166"
+symbol = "📦 "
+
+[nodejs]
+style = "bold #33f0c0"
+symbol = "⬢ "
+
+[rust]
+style = "bold #ff6f8f"
+symbol = "🦀 "
+
+[golang]
+style = "bold #3aeaff"
+symbol = "🐹 "
+
+[php]
+style = "bold #7186fd"
+symbol = "🐘 "
+
+[character]
+success_symbol = "[❯](bold #00d4a8)"
+error_symbol = "[❯](bold #ff4d6d)"

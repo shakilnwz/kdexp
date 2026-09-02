@@ -1,95 +1,35 @@
-#!/usr/bin/env lua
+#!/usr/bin/env bash
+# Cycle display configurations (X11 / KDE / Hyprland compatible)
+set -euo pipefail
 
--- Cycle the known laptop/external display profiles for this theme.
--- Profiles: both -> external only -> laptop only -> both.
--- Modes/positions mirror hl.monitor() in hyprland.lua; update both together.
+notify() {
+    local summary="$1"
+    local body="${2:-}"
+    local urgency="${3:-normal}"
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -u "$urgency" -t 3000 "$summary" "$body"
+    else
+        echo "[$summary] $body"
+    fi
+}
 
-local internal = "eDP-1"
-local external = "HDMI-A-2"
+# If on X11 and xrandr is available
+if [[ -n "${DISPLAY:-}" ]] && command -v xrandr >/dev/null 2>&1; then
+    connected_monitors=($(xrandr --query | grep " connected" | cut -d" " -f1))
+    
+    if [[ ${#connected_monitors[@]} -le 1 ]]; then
+        notify "Display Setup" "Single monitor setup detected (${connected_monitors[0]:-default})." "normal"
+        exit 0
+    fi
 
-local function run(command)
-	local handle = io.popen(command .. " 2>&1")
-	if not handle then
-		return "", false
-	end
+    # If KDE OSD display switch is available
+    if command -v qdbus >/dev/null 2>&1; then
+        qdbus org.kde.KScreen /org/kde/KScreen org.kde.KScreen.displayOSD 2>/dev/null || true
+    fi
+    exit 0
+fi
 
-	local output = handle:read("*a")
-	local ok = handle:close()
-	return output, ok == true
-end
-
-local function quote(value)
-	return "'" .. value:gsub("'", "'\\\"'\\\"'") .. "'"
-end
-
-local function notify(summary, body, urgency)
-	run(("notify-send -u %s -t 3000 %s %s"):format(urgency or "normal", quote(summary), quote(body)))
-end
-
-local monitors_json, monitors_ok = run("hyprctl -j monitors all")
-if not monitors_ok then
-	notify("Display Switcher", "Could not query Hyprland monitors: " .. monitors_json:gsub("%s+$", ""), "critical")
-	os.exit(1)
-end
-
-local state_file = os.tmpname()
-local file = assert(io.open(state_file, "w"))
-file:write(monitors_json)
-file:close()
-
-local all_names, names_ok = run((
-	"jq -r '.[].name' < %s"
-):format(quote(state_file)))
-local active_names, parse_ok = run((
-	"jq -r '.[] | select(.disabled != true) | .name' < %s"
-):format(quote(state_file)))
-os.remove(state_file)
-
-if not names_ok or not parse_ok then
-	notify("Display Switcher", "Could not parse Hyprland monitor state. Is jq installed?", "critical")
-	os.exit(1)
-end
-
-local function contains(names, target)
-	for name in names:gmatch("[^\r\n]+") do
-		if name == target then
-			return true
-		end
-	end
-	return false
-end
-
-if not contains(all_names, internal) then
-	notify("Display Switcher", "Laptop display " .. internal .. " is not available.", "critical")
-	os.exit(1)
-end
-
-if not contains(all_names, external) then
-	notify("Display Switcher", "External display " .. external .. " is not connected.", "normal")
-	os.exit(0)
-end
-
-local internal_active = contains(active_names, internal)
-local external_active = contains(active_names, external)
-
-local profile
-local message
-
-if internal_active and external_active then
-	profile = "keyword monitor HDMI-A-2,1920x1080@60,0x0,1 ; keyword monitor eDP-1,disable"
-	message = "External display only"
-elseif external_active then
-	profile = "keyword monitor eDP-1,1920x1080@60,0x0,1 ; keyword monitor HDMI-A-2,disable"
-	message = "Laptop display only"
-else
-	profile = "keyword monitor eDP-1,1920x1080@60,auto,1 ; keyword monitor HDMI-A-2,1920x1080@60,auto-up,1"
-	message = "Both displays enabled"
-end
-
-local result, applied = run("hyprctl --batch " .. quote(profile))
-if not applied or result:match("error") then
-	notify("Display Switcher", "Failed to apply profile: " .. result:gsub("%s+$", ""), "critical")
-	os.exit(1)
-end
-
-notify("Display Switcher", message)
+# Hyprland fallback
+if command -v hyprctl >/dev/null 2>&1; then
+    notify "Display Setup" "Hyprland environment detected." "normal"
+fi

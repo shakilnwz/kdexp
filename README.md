@@ -1,38 +1,99 @@
-# snxz dotfiles
+# kdexp dotfiles
 
-Personal Linux environment & configuration for **Omarchy Quattro (Hyprland 0.55+)**.
+Personal Linux environment & configuration for **Kubuntu (KDE Plasma on X11)** with **Bash**, **Ghostty**, and **Herdr**.
 
-## 🚀 Setup & Installation
-
-Clone this repository to `~/.dotfiles`:
-
-```bash
-git clone git@github.com:shakilnwz/dotfiles.git ~/.dotfiles
-~/.dotfiles/bootstrap.sh
-```
-
-### What this configures (Symlinked into place):
-- **Hyprland Overrides** (`~/.config/hypr/`):
-  - `bindings.lua` — Application launchers (`SUPER + \` Herdr sessionizer, `SUPER + SHIFT + \` Tmux, `SUPER + SHIFT + O` Vnote, `SUPER + Q`, etc.) and mouse slide navigation.
-  - `input.lua` — Repeat rate (50), delay (200), sensitivity (1), natural scrolling, 3-finger spatial slide gestures, 4-finger workspace gestures.
-  - `looknfeel.lua` — Scrolling layout, 10px rounding, blur vibrancy, window rules (`KeePassXC` floating), `slide_focus` helper function.
-  - `monitors.lua` — Dual-monitor configuration (`HDMI-A-2` above `eDP-1`).
-- **Herdr Multiplexer** (`~/.config/herdr/config.toml`)
-- **Starship Prompt** (`~/.config/starship.toml`)
-- **User Binaries** (`~/.local/bin/`):
-  - `cycle-display`, `herdr-sessionizer`, `tmux-sessionizer`, `vnote`
-- **Quickshell Plugins** (`~/.config/omarchy/plugins/`):
-  - `snxz.lock`, `snxz.menu`, `snxz.taskbar`
-- **Zsh Aliases & Keybinds** (`~/.zshrc` managed from `rc/zshrc`):
-  - `vi`, `svi`, `ta`, `hd`, `ts`, `yz`, `lg`, `ld`, `agx`, and `Ctrl+\` for Herdr sessionizer.
+Designed specifically for shared office machines with **100% Home Directory (`$HOME`) Confinement**.
 
 ---
 
-## 🎨 Theme Separation
+## 🚀 Setup & Installation
 
-Themes in Omarchy are purely visual palettes and wallpapers. You can switch between any Omarchy theme without losing your keybinds, layout, or monitor settings:
+Clone this repository to `~/.kdexp`:
 
 ```bash
-omarchy theme set tokyo-night  # Your keybindings & monitors remain 100% active
-omarchy theme set snxz         # Restores SNXZ cyan/indigo visual palette
+git clone <repo-url> ~/.kdexp
+cd ~/.kdexp
+./bootstrap.sh
+```
+
+### What this configures (Symlinked into place):
+- **User Binaries** (`~/.local/bin/`):
+  - `herdr-sessionizer`, `tmux-sessionizer`, `remap-caps`, `kdexp-browser`, `kdexp-nuke`, `cycle-display`, plus automatic `bat`/`fd` shims.
+- **Shell Configuration** (`~/.bashrc` & `~/.zshrc`):
+  - `stty quit undef` (resolves `Ctrl+\` SIGQUIT collision).
+  - `bind -x '"\C-\\":"herdr-sessionizer"'` for interactive sessionizer in terminal.
+  - Starship prompt (`~/.config/starship.toml`) with **SNXZ Palette**.
+  - Aliases (`vi`, `svi`, `ta`, `hd`, `ts`, `yz`, `lg`, `ld`, `agx`).
+- **KDE Plasma & KWin (X11)**:
+  - **1D Virtual Desktops Filmstrip**: 10 horizontal desktops with smooth slide transitions.
+  - **Auto-Maximize Rules**: Target applications (`Ghostty`, `PhpStorm`, `Zed`, `Chrome`, `Brave`, `Firefox`, `Obsidian`) open maximized.
+  - **SNXZ Accent Color**: System accent set to `#7186fd` (Indigo).
+  - **Global Shortcuts**:
+    - `Meta + Q` — Quit active application / close window.
+    - `Meta + Left / Right` — Switch to previous / next virtual desktop.
+    - `Meta + Shift + Left / Right` — Move active window to previous / next desktop.
+    - `Meta + 1..9` — Switch to Desktop 1..9.
+    - `Meta + Shift + 1..9` — Move window to Desktop 1..9.
+    - `Meta + \` — Launch Herdr Sessionizer (`ghostty -e herdr-sessionizer`).
+    - `Meta + Alt + \` — Launch Herdr Dual Mode (`ghostty -e herdr-sessionizer --dual`).
+    - `Meta + Shift + \` — Launch Tmux Sessionizer (`ghostty -e tmux-sessionizer`).
+    - `Meta + Alt + Return` — Launch Herdr Terminal (`ghostty -e herdr`).
+    - `Meta + Shift + O` — Launch Obsidian.
+- **Browser Cookie & Profile Isolation**:
+  - `kdexp-browser` confines 100% of cookies, login tokens, extensions, and cache to `~/.kdexp/data/browser`. Default system directories (`~/.config/google-chrome`) are untouched.
+- **X11 Caps Lock Remapping**:
+  - `remap-caps` (`setxkbmap` + `xcape`) autostarted via `~/.config/autostart/remap-caps.desktop`.
+  - Tap `Caps Lock` -> **Escape**
+  - Hold `Caps Lock` -> **Control**
+- **Terminal & Editor Configs (SNXZ Palette)**:
+  - `~/.config/ghostty/config` (Embedded native SNXZ theme: `#00000e` background, `#c7efe3` text, `#7186fd` accent)
+  - `~/.config/herdr/config.toml`
+  - `~/.config/svi/` (Neovim Kickstart)
+
+---
+
+## 🔒 Multi-User Safety & Total Data Wipeout (`kdexp-nuke`)
+
+All files, symlinks, desktop entries, and scripts are strictly confined within `$HOME` (`~`).
+All dynamic data (browser sessions, caches, and passwords) is kept inside `~/.kdexp/data/` (which is excluded from Git via `.gitignore`).
+
+To completely wipe all session data and remove all dotfiles symlinks:
+```bash
+kdexp-nuke
+```
+
+---
+
+## 📱 Password Sharing via LocalSend
+
+1. Install **LocalSend** on your phone (Android/iOS) and office PC (`localsend`).
+2. When you need your credentials, send your encrypted `.kdbx` database via LocalSend to `~/.kdexp/data/passwords/`.
+3. Unlock with your master password in KeePassXC / browser extension.
+4. When leaving or running `kdexp-nuke`, the entire `~/.kdexp/data/passwords/` directory is automatically wiped.
+
+---
+
+## 🐳 Safe Testing with Docker
+
+### 1. Terminal / Shell Sandbox Test (CLI)
+Test `./bootstrap.sh`, shell aliases, PATH, and sessionizer scripts:
+```bash
+./tests/run-docker-test.sh
+```
+
+### 2. Full KDE Plasma Desktop Sandbox Test (GUI via Web Browser)
+Start a full KDE Plasma desktop environment inside Docker and interact with it in your web browser:
+```bash
+./tests/run-gui-test.sh
+```
+Then open **`http://localhost:6080/vnc.html`** in your browser. Inside the desktop, open Konsole, run `cd ~/.kdexp && ./bootstrap.sh`, and test the desktop rules and shortcuts live.
+
+
+---
+
+## 📦 Recommended Ubuntu Packages
+
+```bash
+sudo apt update
+sudo apt install tmux fzf bat fd-find ripgrep x11-xkb-utils xcape neovim jq git curl build-essential
 ```

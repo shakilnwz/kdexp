@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Sandboxed Chrome
+Comment=Launch Chrome/Chromium with isolated cookies and sessions inside ~/.kdexp/data/browser
+Exec=kdexp-browser
+Icon=google-chrome
+Terminal=false
+Type=Application
+Categories=Network;WebBrowser;
+StartupNotify=true

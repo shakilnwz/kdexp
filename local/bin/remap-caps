@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# User-space Caps Lock remap on X11: Tap = Escape, Hold = Control
+# Safe for multi-user machines: runs purely within the current user's X11 session.
+set -euo pipefail
+
+if [[ -n "${DISPLAY:-}" ]] && command -v setxkbmap >/dev/null 2>&1; then
+    # Map Caps Lock to act as Left Control
+    setxkbmap -option caps:ctrl_modifier 2>/dev/null || true
+
+    # If xcape is installed, map standalone Control_L tap to Escape
+    if command -v xcape >/dev/null 2>&1; then
+        killall xcape 2>/dev/null || true
+        xcape -e 'Control_L=Escape'
+    fi
+fi

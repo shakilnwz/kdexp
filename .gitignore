@@ -1,0 +1,10 @@
+# kdexp isolated data & sensitive credentials (NEVER commit to git)
+data/
+*.kdbx
+*.key
+*.keyx
+*.pem
+*.bak*
+*.tmp*
+*.log
+.DS_Store

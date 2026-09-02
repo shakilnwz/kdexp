@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Remap Caps Lock (Esc / Ctrl)
+Comment=Remaps Caps Lock to Escape on tap and Control on hold in X11
+Exec=remap-caps
+Terminal=false
+Type=Application
+Categories=Utility;
+StartupNotify=false
+X-KDE-autostart-phase=2
