@@ -91,9 +91,17 @@ Then open **`http://localhost:6080/vnc.html`** in your browser. Inside the deskt
 
 ---
 
-## 📦 Recommended Ubuntu Packages
+## 📦 Automatic Application Installation (`apps.sh`)
+
+To automatically install all tools, applications (Chromium, Ghostty, Obsidian, LocalSend, Zed), CLI developer utilities (Starship, Lazygit, Lazydocker), and the JetBrainsMono Nerd Font on a fresh Kubuntu system:
 
 ```bash
-sudo apt update
-sudo apt install tmux fzf bat fd-find ripgrep x11-xkb-utils xcape neovim jq git curl build-essential
+./apps.sh
 ```
+
+Or install by category:
+- `./apps.sh --cli` — Core apt packages + Starship + Lazygit + Lazydocker
+- `./apps.sh --gui` — Chromium + Ghostty + Obsidian + LocalSend + Zed
+- `./apps.sh --browser` — Chromium browser
+- `./apps.sh --fonts` — JetBrainsMono Nerd Font
+

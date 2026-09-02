@@ -161,8 +161,8 @@ done
 if [[ ${#missing_pkgs[@]} -gt 0 ]]; then
   echo "  Note: The following tools were not found in PATH:"
   echo "  ${missing_pkgs[*]}"
-  echo "  You can install them on Ubuntu via:"
-  echo "    sudo apt install tmux fzf ripgrep x11-xkb-utils xcape neovim"
+  echo "  Tip: You can automatically install all required applications and tools by running:"
+  echo "    ./apps.sh"
 else
   echo "  ✓ All core tools are installed."
 fi
