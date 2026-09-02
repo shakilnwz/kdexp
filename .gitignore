@@ -7,4 +7,10 @@ data/
 *.bak*
 *.tmp*
 *.log
+.env
+.env.*
+*.id_rsa*
+*.id_ed25519*
+secrets/
+auth/
 .DS_Store
