@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+switch_to() {
+    if [[ -z $TMUX ]]; then
+        tmux attach-session -t "$1"
+    else
+        tmux switch-client -t "$1"
+    fi
+}
+
+has_session() {
+    tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq -- "$1"
+}
+
+hydrate() {
+    if [ -f "$2/.tmux-sessionizer" ]; then
+        tmux send-keys -t "$1" "source $2/.tmux-sessionizer" c-M
+    elif [ -f "$HOME/.tmux-sessionizer" ]; then
+        tmux send-keys -t "$1" "source $HOME/.tmux-sessionizer" c-M
+    fi
+}
+
+if [[ $# -eq 1 ]]; then
+    selected=$1
+else
+    selected=$(
+        find ~/.dotfiles ~/code ~/Backup ~/Documents ~/Downloads ~/.local/bin ~/.config -mindepth 0 -maxdepth 5 \( -name .git -o -name node_modules -o -name .venv -o -name target \) -prune -o -type d -print 2>/dev/null |
+            sed "s|$HOME|~|" |
+            fzf --preview '[ -f {}/README.md ] && bat --color=always {}/README.md || [ -f {}/readme.md ] && bat --color=always {}/readme.md || [ -f {}/index.html ] && bat --color=always {}/index.html || echo "No README.md or index.html found in {}"' --preview-window right:50%:wrap
+    )
+    selected="${selected/#\~/$HOME}"
+fi
+
+if [[ -z $selected ]]; then
+    exit 0
+fi
+
+selected=$(realpath -- "$selected")
+selected_name=$(basename "$selected" | tr . _)
+tmux_running=$(pgrep tmux)
+
+if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
+    tmux new-session -s "$selected_name" -c "$selected"
+    hydrate "$selected_name" "$selected"
+    exit 0
+fi
+
+if ! has_session "$selected_name"; then
+    tmux new-session -ds "$selected_name" -c "$selected"
+    hydrate "$selected_name" "$selected"
+fi
+
+switch_to "$selected_name"

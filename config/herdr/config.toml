@@ -1,0 +1,59 @@
+onboarding = false
+
+[ui.toast]
+delivery = "system"
+
+[theme]
+name = "terminal"
+auto_switch = true
+
+[ui]
+accent = "blue"
+show_agent_labels_on_pane_borders = false
+agent_panel_sort = "spaces"
+
+[experimental]
+pane_history = false
+
+[keys]
+prefix = "ctrl+a"
+detach = "prefix+d"
+
+# Pane Controls (Splitting, Closing & Focus)
+split_vertical = ["alt+enter", "prefix+h"]
+split_horizontal = ["alt+shift+enter", "prefix+v"]
+close_pane = ["alt+escape", "prefix+x"]
+
+focus_pane_left = ["ctrl+alt+left", "prefix+left"]
+focus_pane_right = ["ctrl+alt+right", "prefix+right"]
+focus_pane_up = ["ctrl+alt+up", "prefix+up"]
+focus_pane_down = ["ctrl+alt+down", "prefix+down"]
+
+# Tab / Window Controls
+new_tab = "prefix+c"
+rename_tab = "prefix+r"
+close_tab = "prefix+k"
+previous_tab = "alt+left"
+next_tab = "alt+right"
+
+# Workspace / Session Controls
+rename_workspace = "prefix+shift+r"
+new_workspace = "prefix+shift+c"
+close_workspace = "prefix+shift+k"
+previous_workspace = ["alt+up", "prefix+shift+p"]
+next_workspace = ["alt+down", "prefix+shift+n"]
+
+[keys.indexed]
+tabs = "alt"
+
+[[keys.command]]
+key = "prefix+\\"
+type = "popup"
+command = "herdr-sessionizer"
+width = "80%"
+height = "80%"
+
+[[keys.command]]
+key = "prefix+q"
+type = "shell"
+command = "herdr session stop --current"

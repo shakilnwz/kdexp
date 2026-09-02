@@ -1,0 +1,95 @@
+#!/usr/bin/env lua
+
+-- Cycle the known laptop/external display profiles for this theme.
+-- Profiles: both -> external only -> laptop only -> both.
+-- Modes/positions mirror hl.monitor() in hyprland.lua; update both together.
+
+local internal = "eDP-1"
+local external = "HDMI-A-2"
+
+local function run(command)
+	local handle = io.popen(command .. " 2>&1")
+	if not handle then
+		return "", false
+	end
+
+	local output = handle:read("*a")
+	local ok = handle:close()
+	return output, ok == true
+end
+
+local function quote(value)
+	return "'" .. value:gsub("'", "'\\\"'\\\"'") .. "'"
+end
+
+local function notify(summary, body, urgency)
+	run(("notify-send -u %s -t 3000 %s %s"):format(urgency or "normal", quote(summary), quote(body)))
+end
+
+local monitors_json, monitors_ok = run("hyprctl -j monitors all")
+if not monitors_ok then
+	notify("Display Switcher", "Could not query Hyprland monitors: " .. monitors_json:gsub("%s+$", ""), "critical")
+	os.exit(1)
+end
+
+local state_file = os.tmpname()
+local file = assert(io.open(state_file, "w"))
+file:write(monitors_json)
+file:close()
+
+local all_names, names_ok = run((
+	"jq -r '.[].name' < %s"
+):format(quote(state_file)))
+local active_names, parse_ok = run((
+	"jq -r '.[] | select(.disabled != true) | .name' < %s"
+):format(quote(state_file)))
+os.remove(state_file)
+
+if not names_ok or not parse_ok then
+	notify("Display Switcher", "Could not parse Hyprland monitor state. Is jq installed?", "critical")
+	os.exit(1)
+end
+
+local function contains(names, target)
+	for name in names:gmatch("[^\r\n]+") do
+		if name == target then
+			return true
+		end
+	end
+	return false
+end
+
+if not contains(all_names, internal) then
+	notify("Display Switcher", "Laptop display " .. internal .. " is not available.", "critical")
+	os.exit(1)
+end
+
+if not contains(all_names, external) then
+	notify("Display Switcher", "External display " .. external .. " is not connected.", "normal")
+	os.exit(0)
+end
+
+local internal_active = contains(active_names, internal)
+local external_active = contains(active_names, external)
+
+local profile
+local message
+
+if internal_active and external_active then
+	profile = "keyword monitor HDMI-A-2,1920x1080@60,0x0,1 ; keyword monitor eDP-1,disable"
+	message = "External display only"
+elseif external_active then
+	profile = "keyword monitor eDP-1,1920x1080@60,0x0,1 ; keyword monitor HDMI-A-2,disable"
+	message = "Laptop display only"
+else
+	profile = "keyword monitor eDP-1,1920x1080@60,auto,1 ; keyword monitor HDMI-A-2,1920x1080@60,auto-up,1"
+	message = "Both displays enabled"
+end
+
+local result, applied = run("hyprctl --batch " .. quote(profile))
+if not applied or result:match("error") then
+	notify("Display Switcher", "Failed to apply profile: " .. result:gsub("%s+$", ""), "critical")
+	os.exit(1)
+end
+
+notify("Display Switcher", message)
