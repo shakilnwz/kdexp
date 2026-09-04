@@ -101,6 +101,7 @@ Start a full KDE Plasma desktop environment inside Docker and interact with it d
 docker compose up --build
 ```
 - Open **`http://localhost:6080/vnc.html`** in your browser.
+- **Default user credentials**: `testuser` / `kdexp` (if prompted by screen lock or sudo).
 - The test environment mounts `./data/test-home` as `/home/testuser` (writable and git-ignored), allowing you to install applications, save state, and test across container restarts.
 - Inside the desktop: open Konsole, run `cd ~/.kdexp && ./bootstrap.sh`, and test the desktop rules, shortcuts, and apps live.
 

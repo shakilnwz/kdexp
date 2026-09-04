@@ -26,10 +26,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     neovim \
     sudo \
     ca-certificates \
+    plasma-session-x11 \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root test user
+# Create /tmp/.X11-unix with sticky bit permissions for Xvfb
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
+
+# Create non-root test user with default password 'kdexp'
 RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser:kdexp" | chpasswd && \
     echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 COPY tests/entrypoint-gui.sh /usr/local/bin/entrypoint-gui.sh

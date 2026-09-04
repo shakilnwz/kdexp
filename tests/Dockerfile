@@ -20,8 +20,9 @@ RUN apt-get update && apt-get install -y \
     libkf6config-bin \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root test user to simulate multi-user environment
+# Create non-root test user to simulate multi-user environment (password: kdexp)
 RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser:kdexp" | chpasswd && \
     echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 USER testuser
