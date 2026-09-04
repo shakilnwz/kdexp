@@ -12,6 +12,7 @@ echo "==> Bootstrapping kdexp dotfiles from: $DOTFILES"
 mkdir -p "$HOME/.config" \
          "$HOME/.local/bin" \
          "$HOME/.local/share/applications" \
+         "$HOME/.local/share/wallpapers" \
          "$HOME/.config/autostart" \
          "$DOTFILES/data/browser" \
          "$DOTFILES/data/passwords"
@@ -129,7 +130,19 @@ for auto in "$DOTFILES/config/kde/autostart/"*.desktop; do
   echo "  ✓ Linked Autostart Entry: $target"
 done
 
-# ── 6. KWin Rules & Virtual Desktop Shortcuts ─────────────────────────────────
+# ── 6. KWin Scripts, Wallpapers & Dynamic Virtual Desktops ────────────────────
+if [[ -d "$DOTFILES/config/kde/wallpapers" ]]; then
+  mkdir -p "$HOME/.local/share/wallpapers"
+  ln -nsf "$DOTFILES/config/kde/wallpapers" "$HOME/.local/share/wallpapers/kdexp"
+  echo "  ✓ Linked Wallpapers: $HOME/.local/share/wallpapers/kdexp"
+fi
+
+if [[ -d "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces" ]]; then
+  mkdir -p "$HOME/.local/share/kwin/scripts"
+  ln -nsf "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces" "$HOME/.local/share/kwin/scripts/dynamic_workspaces"
+  echo "  ✓ Linked KWin Script: $HOME/.local/share/kwin/scripts/dynamic_workspaces"
+fi
+
 if [[ -f "$DOTFILES/config/kde/kwinrulesrc" ]]; then
   kwinrules_target="$HOME/.config/kwinrulesrc"
   # If kwinrulesrc doesn't exist, link it; if exists, append our rule group if not present

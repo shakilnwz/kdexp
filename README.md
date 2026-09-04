@@ -1,6 +1,6 @@
 # kdexp dotfiles
 
-Personal Linux environment & configuration for **Kubuntu (KDE Plasma on X11)** with **Bash**, **Ghostty**, and **Herdr**.
+Personal Linux environment & configuration for **Kubuntu (KDE Plasma 6 / 5 on Wayland & X11)** with **Bash**, **Ghostty**, and **Herdr**.
 
 Designed specifically for shared office machines with **100% Home Directory (`$HOME`) Confinement**.
 
@@ -25,9 +25,10 @@ cd ~/.kdexp
   - Starship prompt (`~/.config/starship.toml`) with **SNXZ Palette**.
   - Aliases (`vi`, `svi`, `ta`, `hd`, `ts`, `yz`, `lg`, `ld`, `agx`).
 - **KDE Plasma & KWin (X11)**:
-  - **1D Virtual Desktops Filmstrip**: 10 horizontal desktops with smooth slide transitions.
+  - **1D Dynamic Virtual Desktops (GNOME-style)**: Workspaces open dynamically as windows are created or moved to the right, and empty trailing workspaces are automatically pruned. Smooth slide transitions enabled.
   - **Auto-Maximize Rules**: Target applications (`Ghostty`, `PhpStorm`, `Zed`, `Chrome`, `Brave`, `Firefox`, `Obsidian`) open maximized.
   - **SNXZ Accent Color**: System accent set to `#7186fd` (Indigo).
+  - **SNXZ Wallpapers**: Abstract wallpapers from `omarchy-snxz-theme` linked to `~/.local/share/wallpapers/kdexp`, with `1-abstract.jpg` set as default.
   - **Global Shortcuts**:
     - `Meta + Q` — Quit active application / close window.
     - `Meta + Left / Right` — Switch to previous / next virtual desktop.

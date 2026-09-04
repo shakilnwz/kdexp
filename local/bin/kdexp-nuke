@@ -29,7 +29,9 @@ rm -f "$HOME/.config/starship.toml" \
       "$HOME/.local/share/applications/herdr-dual.desktop" \
       "$HOME/.local/share/applications/tmux-sessionizer.desktop" \
       "$HOME/.local/share/applications/herdr.desktop" \
-      "$HOME/.local/share/applications/kdexp-browser.desktop"
+      "$HOME/.local/share/applications/kdexp-browser.desktop" \
+      "$HOME/.local/share/kwin/scripts/dynamic_workspaces" \
+      "$HOME/.local/share/wallpapers/kdexp"
 
 for f in "$DOTFILES/local/bin/"*; do
     [[ -f "$f" ]] && rm -f "$HOME/.local/bin/${f##*/}"

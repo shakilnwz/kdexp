@@ -36,17 +36,93 @@ set_kconfig() {
     fi
 }
 
-echo "==> Configuring KDE Virtual Desktops (1D Filmstrip)..."
+DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+echo "==> Configuring KDE Dynamic Virtual Desktops (GNOME-style)..."
+KWIN_SCRIPTS_DIR="$HOME/.local/share/kwin/scripts"
+mkdir -p "$KWIN_SCRIPTS_DIR"
+
+if [[ -d "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces" ]]; then
+    ln -nsf "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces" "$KWIN_SCRIPTS_DIR/dynamic_workspaces"
+    echo "  ✓ Linked dynamic_workspaces script to $KWIN_SCRIPTS_DIR/dynamic_workspaces"
+    
+    # Register with KPackage tool if available
+    if command -v kpackagetool6 >/dev/null 2>&1; then
+        kpackagetool6 --type KWin/Script -u "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || \
+        kpackagetool6 --type KWin/Script -i "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || true
+    elif command -v kpackagetool5 >/dev/null 2>&1; then
+        kpackagetool5 --type KWin/Script -u "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || \
+        kpackagetool5 --type KWin/Script -i "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || true
+    elif command -v plasmapkg2 >/dev/null 2>&1; then
+        plasmapkg2 --type kwinscript -u "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || \
+        plasmapkg2 --type kwinscript -i "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || true
+    fi
+fi
+
 KWINRC="$KDE_CONFIG_DIR/kwinrc"
-set_kconfig "$KWINRC" "Desktops" "Number" "10"
+set_kconfig "$KWINRC" "Desktops" "Number" "2"
 set_kconfig "$KWINRC" "Desktops" "Rows" "1"
 set_kconfig "$KWINRC" "Plugins" "slideEnabled" "true"
+set_kconfig "$KWINRC" "Plugins" "dynamic_workspacesEnabled" "true"
 
 echo "==> Configuring KDE SNXZ Accent Color (#7186fd)..."
 KDEGLOBALS="$KDE_CONFIG_DIR/kdeglobals"
 set_kconfig "$KDEGLOBALS" "General" "AccentColor" "113,134,253"
 set_kconfig "$KDEGLOBALS" "General" "accentColorFromWallpaper" "false"
 set_kconfig "$KDEGLOBALS" "General" "ColorScheme" "BreezeDark"
+
+echo "==> Configuring KDE Keyboard (Caps Lock -> Control modifier)..."
+KCMINPUTRC="$KDE_CONFIG_DIR/kcminputrc"
+set_kconfig "$KCMINPUTRC" "Keyboard" "XkbOptions" "caps:ctrl_modifier"
+
+echo "==> Configuring KDE SNXZ Default Wallpaper (1-abstract.jpg)..."
+WALLPAPER_DIR="$HOME/.local/share/wallpapers/kdexp"
+DEFAULT_WALLPAPER="$WALLPAPER_DIR/1-abstract.jpg"
+mkdir -p "$HOME/.local/share/wallpapers"
+
+if [[ -d "$DOTFILES/config/kde/wallpapers" ]]; then
+    ln -nsf "$DOTFILES/config/kde/wallpapers" "$WALLPAPER_DIR"
+    echo "  ✓ Linked wallpapers to $WALLPAPER_DIR"
+fi
+
+if [[ -f "$DEFAULT_WALLPAPER" ]]; then
+    # 1. Apply wallpaper via plasma-apply-wallpaperimage if available
+    if command -v plasma-apply-wallpaperimage >/dev/null 2>&1; then
+        plasma-apply-wallpaperimage "$DEFAULT_WALLPAPER" >/dev/null 2>&1 || true
+    fi
+
+    # 2. Apply wallpaper via D-Bus if plasmashell is running (Plasma 6 / 5)
+    QDBUS_CMD=""
+    if command -v qdbus6 >/dev/null 2>&1; then
+        QDBUS_CMD="qdbus6"
+    elif command -v qdbus >/dev/null 2>&1; then
+        QDBUS_CMD="qdbus"
+    fi
+
+    if [[ -n "$QDBUS_CMD" && (-n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}") ]]; then
+        "$QDBUS_CMD" org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "
+            var allDesktops = desktops();
+            for (var i = 0; i < allDesktops.length; i++) {
+                var d = allDesktops[i];
+                d.wallpaperPlugin = 'org.kde.image';
+                d.currentConfigGroup = ['Wallpaper', 'org.kde.image', 'General'];
+                d.writeConfig('Image', 'file://$DEFAULT_WALLPAPER');
+            }
+        " >/dev/null 2>&1 || true
+    fi
+
+    # 3. Configure Lock Screen wallpaper (kscreenlockerrc)
+    KSCREENLOCKERRC="$KDE_CONFIG_DIR/kscreenlockerrc"
+    set_kconfig "$KSCREENLOCKERRC" "Greeter" "WallpaperPlugin" "org.kde.image"
+    set_kconfig "$KSCREENLOCKERRC" "Greeter][Wallpaper][org.kde.image][General" "Image" "file://$DEFAULT_WALLPAPER"
+
+    # 4. Configure Plasma desktop applet containment if config exists
+    PLASMA_APPLETRC="$KDE_CONFIG_DIR/plasma-org.kde.plasma.desktop-appletsrc"
+    if [[ -f "$PLASMA_APPLETRC" ]]; then
+        sed -i -E "s|^Image=.*|Image=file://$DEFAULT_WALLPAPER|" "$PLASMA_APPLETRC" 2>/dev/null || true
+    fi
+    echo "  ✓ Configured default wallpaper: 1-abstract.jpg"
+fi
 
 echo "==> Configuring KDE Global Shortcuts & KWin Rules..."
 SHORTCUTSRC="$KDE_CONFIG_DIR/kglobalshortcutsrc"
@@ -77,11 +153,18 @@ elif command -v kbuildsycoca5 >/dev/null 2>&1; then
     kbuildsycoca5 --noincremental >/dev/null 2>&1 || true
 fi
 
-# Reload KWin configuration if running
-if [[ -n "${DISPLAY:-}" ]]; then
-    if command -v qdbus >/dev/null 2>&1; then
+# Reload KWin configuration if running (Wayland or X11)
+if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+    if command -v qdbus6 >/dev/null 2>&1; then
+        qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null || true
+    elif command -v qdbus >/dev/null 2>&1; then
         qdbus org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null || true
     fi
+fi
+
+# Apply Caps Lock remap if session is active
+if [[ -x "$HOME/.local/bin/remap-caps" ]]; then
+    "$HOME/.local/bin/remap-caps" >/dev/null 2>&1 || true
 fi
 
 echo "  ✓ KDE Plasma virtual desktops & shortcuts configured."
