@@ -188,26 +188,33 @@ for auto in "$DOTFILES/config/kde/autostart/"*.desktop; do
   echo "  ✓ Linked Autostart Entry: $target"
 done
 
-# ── 6. KWin Scripts, Wallpapers & Dynamic Virtual Desktops ────────────────────
+# ── 6. KWin Scripts, Effects, Wallpapers & Scrolling Window Manager ───────────
 if [[ -d "$DOTFILES/config/kde/wallpapers" ]]; then
   mkdir -p "$HOME/.local/share/wallpapers"
   ln -nsf "$DOTFILES/config/kde/wallpapers" "$HOME/.local/share/wallpapers/kdexp"
   echo "  ✓ Linked Wallpapers: $HOME/.local/share/wallpapers/kdexp"
 fi
 
-if [[ -d "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces" ]]; then
+# Clean up legacy dynamic_workspaces script symlink if present
+rm -f "$HOME/.local/share/kwin/scripts/dynamic_workspaces"
+
+if [[ -d "$DOTFILES/config/kde/kwin-scripts/karousel" ]]; then
   mkdir -p "$HOME/.local/share/kwin/scripts"
-  ln -nsf "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces" "$HOME/.local/share/kwin/scripts/dynamic_workspaces"
-  echo "  ✓ Linked KWin Script: $HOME/.local/share/kwin/scripts/dynamic_workspaces"
+  ln -nsf "$DOTFILES/config/kde/kwin-scripts/karousel" "$HOME/.local/share/kwin/scripts/karousel"
+  echo "  ✓ Linked KWin Script: $HOME/.local/share/kwin/scripts/karousel"
+fi
+
+if [[ -d "$DOTFILES/config/kde/kwin-effects/kwin4_effect_geometry_change" ]]; then
+  mkdir -p "$HOME/.local/share/kwin/effects"
+  ln -nsf "$DOTFILES/config/kde/kwin-effects/kwin4_effect_geometry_change" "$HOME/.local/share/kwin/effects/kwin4_effect_geometry_change"
+  echo "  ✓ Linked KWin Effect: $HOME/.local/share/kwin/effects/kwin4_effect_geometry_change"
 fi
 
 if [[ -f "$DOTFILES/config/kde/kwinrulesrc" ]]; then
   kwinrules_target="$HOME/.config/kwinrulesrc"
   kwinrules_source="$DOTFILES/config/kde/kwinrulesrc"
   if [[ -f $kwinrules_target && ! -L $kwinrules_target ]]; then
-    if ! grep -q "Auto Maximize Main Work Applications" "$kwinrules_target"; then
-      mv "$kwinrules_target" "${kwinrules_target}.bak.$(date +%Y%m%d_%H%M%S)"
-    fi
+    mv "$kwinrules_target" "${kwinrules_target}.bak.$(date +%Y%m%d_%H%M%S)"
   fi
   ln -nsf "$kwinrules_source" "$kwinrules_target"
   echo "  ✓ Linked KWin Rules: $kwinrules_target"

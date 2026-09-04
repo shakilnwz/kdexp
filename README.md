@@ -24,17 +24,19 @@ cd ~/.kdexp
   - `bind -x '"\C-\\":"herdr-sessionizer"'` for interactive sessionizer in terminal.
   - Starship prompt (`~/.config/starship.toml`) with **SNXZ Palette**.
   - Aliases (`vi`, `svi`, `ta`, `hd`, `ts`, `yz`, `lg`, `ld`, `agx`).
-- **KDE Plasma & KWin (X11)**:
-  - **1D Dynamic Virtual Desktops (GNOME-style)**: Workspaces open dynamically as windows are created or moved to the right, and empty trailing workspaces are automatically pruned. Smooth slide transitions enabled.
-  - **Auto-Maximize Rules**: Target applications (`Ghostty`, `PhpStorm`, `Zed`, `Chrome`, `Brave`, `Firefox`, `Obsidian`) open maximized.
+- **KDE Plasma & Karousel Scrolling Window Mode**:
+  - **Karousel Scrollable Tiling**: Windows are arranged in a horizontal scrolling carousel on a single continuous workspace (PaperWM-style). No dependency on virtual desktop switching.
+  - **Automatic Full-Width Windows**: Every newly opened tiled window automatically expands to 100% screen width.
+  - **Smooth Slide Animations**: `kwin4_effect_geometry_change` provides hardware-accelerated horizontal sliding animations as windows scroll into focus.
+  - **Infinite Carousel Wrap-Around**: Navigating past the last window smoothly wraps around to the first, and vice versa.
   - **SNXZ Accent Color**: System accent set to `#7186fd` (Indigo).
   - **SNXZ Wallpapers**: Abstract wallpapers from `omarchy-snxz-theme` linked to `~/.local/share/wallpapers/kdexp`, with `1-abstract.jpg` set as default.
   - **Global Shortcuts**:
+    - `Meta + Left / Right` — Previous / next window in carousel (infinite wrap-around).
+    - `Meta + Shift + Left / Right` — Shift active window left / right in the carousel strip.
+    - `Meta + Space` — Toggle floating mode for active window.
+    - `Meta + R` — Cycle preset window width.
     - `Meta + Q` — Quit active application / close window.
-    - `Meta + Left / Right` — Switch to previous / next virtual desktop.
-    - `Meta + Shift + Left / Right` — Move active window to previous / next desktop.
-    - `Meta + 1..9` — Switch to Desktop 1..9.
-    - `Meta + Shift + 1..9` — Move window to Desktop 1..9.
     - `Meta + \` — Launch Herdr Sessionizer (`ghostty -e herdr-sessionizer`).
     - `Meta + Alt + \` — Launch Herdr Dual Mode (`ghostty -e herdr-sessionizer --dual`).
     - `Meta + Shift + \` — Launch Tmux Sessionizer (`ghostty -e tmux-sessionizer`).

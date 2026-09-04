@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     ca-certificates \
     plasma-session-x11 \
+    qml6-module-org-kde-notifications \
     && rm -rf /var/lib/apt/lists/*
 
 # Create /tmp/.X11-unix with sticky bit permissions for Xvfb

@@ -25,7 +25,8 @@ install_core_apt() {
         tmux fzf bat fd-find ripgrep \
         x11-xkb-utils xcape neovim \
         software-properties-common ca-certificates \
-        fontconfig
+        fontconfig \
+        qml6-module-org-kde-notifications || sudo apt install -y qml-module-org-kde-notifications || true
     success "Core apt packages installed."
 }
 

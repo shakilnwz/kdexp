@@ -36,6 +36,8 @@ rm -f "$HOME/.config/starship.toml" \
       "$HOME/.local/share/applications/tmux-sessionizer.desktop" \
       "$HOME/.local/share/applications/herdr.desktop" \
       "$HOME/.local/share/applications/kdexp-browser.desktop" \
+      "$HOME/.local/share/kwin/scripts/karousel" \
+      "$HOME/.local/share/kwin/effects/kwin4_effect_geometry_change" \
       "$HOME/.local/share/kwin/scripts/dynamic_workspaces" \
       "$HOME/.local/share/wallpapers/kdexp" \
       "$HOME/.gemini" \
