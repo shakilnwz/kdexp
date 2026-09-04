@@ -1,0 +1,14 @@
+services:
+  kdexp-gui:
+    build:
+      context: .
+      dockerfile: tests/Dockerfile.gui
+    container_name: kdexp-gui-test
+    ports:
+      - "6080:6080"
+    volumes:
+      - ./data/test-home:/home/testuser
+      - .:/dotfiles:ro
+    shm_size: 1gb
+    environment:
+      - DISPLAY=:1

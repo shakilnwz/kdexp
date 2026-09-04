@@ -51,12 +51,21 @@ cd ~/.kdexp
   - `~/.config/herdr/config.toml`
   - `~/.config/svi/` (Neovim Kickstart)
 
+- **AI & Editor Isolation (Antigravity & Zed ACP)**:
+  - **Antigravity CLI**: Confined to `~/.kdexp/data/antigravity` via `~/.gemini` symlink.
+  - **Zed Assistant & ACP**: Assistant threads (`~/.local/share/zed/threads`) and state (`~/.local/state/zed`) are confined to `~/.kdexp/data/zed/` (leaving default system storage untouched).
+- **Interactive Global Git Identity**:
+  - Automatically prompts for `user.name` and `user.email` at the end of `bootstrap.sh` if not already set globally.
+  - Headless/non-interactive environments safely bypass prompting without hanging.
+- **KDE Plasma Environment Protection**:
+  - `bootstrap.sh` requires KDE Plasma to be installed (`plasmashell`, `kwin_x11`, `kwriteconfig6`, etc.) and refuses to run on non-KDE environments to prevent misconfiguration.
+
 ---
 
 ## 🔒 Multi-User Safety & Total Data Wipeout (`kdexp-nuke`)
 
 All files, symlinks, desktop entries, and scripts are strictly confined within `$HOME` (`~`).
-All dynamic data (browser sessions, caches, and passwords) is kept inside `~/.kdexp/data/` (which is excluded from Git via `.gitignore`).
+All dynamic data (browser sessions, caches, passwords, Antigravity AI sessions, and Zed ACP conversation state) is kept inside `~/.kdexp/data/` (which is excluded from Git via `.gitignore`).
 
 To completely wipe all session data and remove all dotfiles symlinks:
 ```bash
@@ -82,12 +91,18 @@ Test `./bootstrap.sh`, shell aliases, PATH, and sessionizer scripts:
 ./tests/run-docker-test.sh
 ```
 
-### 2. Full KDE Plasma Desktop Sandbox Test (GUI via Web Browser)
-Start a full KDE Plasma desktop environment inside Docker and interact with it in your web browser:
+### 2. Full KDE Plasma Desktop Sandbox Test (Docker Compose + noVNC Web GUI)
+Start a full KDE Plasma desktop environment inside Docker and interact with it directly in your web browser:
 ```bash
+# Using helper script
 ./tests/run-gui-test.sh
+
+# Or directly via Docker Compose
+docker compose up --build
 ```
-Then open **`http://localhost:6080/vnc.html`** in your browser. Inside the desktop, open Konsole, run `cd ~/.kdexp && ./bootstrap.sh`, and test the desktop rules and shortcuts live.
+- Open **`http://localhost:6080/vnc.html`** in your browser.
+- The test environment mounts `./data/test-home` as `/home/testuser` (writable and git-ignored), allowing you to install applications, save state, and test across container restarts.
+- Inside the desktop: open Konsole, run `cd ~/.kdexp && ./bootstrap.sh`, and test the desktop rules, shortcuts, and apps live.
 
 
 ---

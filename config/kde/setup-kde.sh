@@ -156,9 +156,9 @@ fi
 # Reload KWin configuration if running (Wayland or X11)
 if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
     if command -v qdbus6 >/dev/null 2>&1; then
-        qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null || true
+        qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null || true
     elif command -v qdbus >/dev/null 2>&1; then
-        qdbus org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null || true
+        qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || qdbus org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null || true
     fi
 fi
 

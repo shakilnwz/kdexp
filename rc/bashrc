@@ -9,8 +9,9 @@ if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Source shared aliases
+# Source shared aliases & environment
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.kdexp}"
+export GEMINI_DIR="$DOTFILES_DIR/data/antigravity"
 if [[ -f "$DOTFILES_DIR/rc/aliases.sh" ]]; then
     source "$DOTFILES_DIR/rc/aliases.sh"
 elif [[ -f "$HOME/.config/kdexp/rc/aliases.sh" ]]; then

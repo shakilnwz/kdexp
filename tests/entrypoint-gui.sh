@@ -2,9 +2,34 @@
 set -euo pipefail
 
 echo "==> Setting up test environment..."
+
+# Ensure /home/testuser is owned by testuser and has basic skel files
+sudo chown -R testuser:testuser /home/testuser 2>/dev/null || true
+if [[ ! -f /home/testuser/.bashrc && -d /etc/skel ]]; then
+    echo "==> Initializing fresh home directory from /etc/skel..."
+    cp -r /etc/skel/. /home/testuser/ 2>/dev/null || true
+    sudo chown -R testuser:testuser /home/testuser 2>/dev/null || true
+fi
+
 mkdir -p /home/testuser/.kdexp
-if [[ -d /home/testuser/dotfiles ]]; then
-    cp -r /home/testuser/dotfiles/. /home/testuser/.kdexp/
+src_dir=""
+if [[ -d /dotfiles ]]; then
+    src_dir="/dotfiles"
+elif [[ -d /home/testuser/dotfiles ]]; then
+    src_dir="/home/testuser/dotfiles"
+fi
+
+if [[ -n "$src_dir" ]]; then
+    for item in "$src_dir"/* "$src_dir"/.[!.]*; do
+        [[ -e "$item" ]] || continue
+        base=$(basename "$item")
+        [[ "$base" == "data" ]] && continue
+        cp -rf "$item" /home/testuser/.kdexp/
+    done
+fi
+
+if [[ $# -gt 0 ]]; then
+    exec "$@"
 fi
 
 export DISPLAY=:1

@@ -32,10 +32,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN useradd -m -s /bin/bash testuser && \
     echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
+COPY tests/entrypoint-gui.sh /usr/local/bin/entrypoint-gui.sh
+RUN chmod +x /usr/local/bin/entrypoint-gui.sh
+
 USER testuser
 ENV HOME=/home/testuser
 WORKDIR /home/testuser
 
 EXPOSE 6080
 
-CMD ["/bin/bash", "/home/testuser/dotfiles/tests/entrypoint-gui.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint-gui.sh"]

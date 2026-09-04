@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     neovim \
     sudo \
     ca-certificates \
+    libkf6config-bin \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root test user to simulate multi-user environment

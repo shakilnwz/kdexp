@@ -18,12 +18,18 @@ echo "==> Terminating running browser and sessionizer processes..."
 pkill -f "kdexp-browser" 2>/dev/null || true
 pkill -f "herdr-sessionizer" 2>/dev/null || true
 pkill -f "tmux-sessionizer" 2>/dev/null || true
+pkill -f "agy" 2>/dev/null || true
+pkill -f "antigravity" 2>/dev/null || true
+pkill -f "agy_acp_server" 2>/dev/null || true
+pkill -f "dev.zed.Zed" 2>/dev/null || true
+pkill -f "zed" 2>/dev/null || true
 
 echo "==> Removing symlinks from ~/.config, ~/.local/bin, ~/.local/share/applications..."
 rm -f "$HOME/.config/starship.toml" \
       "$HOME/.config/ghostty/config" \
       "$HOME/.config/herdr/config.toml" \
       "$HOME/.config/svi" \
+      "$HOME/.config/kwinrulesrc" \
       "$HOME/.config/autostart/remap-caps.desktop" \
       "$HOME/.local/share/applications/herdr-sessionizer.desktop" \
       "$HOME/.local/share/applications/herdr-dual.desktop" \
@@ -31,7 +37,10 @@ rm -f "$HOME/.config/starship.toml" \
       "$HOME/.local/share/applications/herdr.desktop" \
       "$HOME/.local/share/applications/kdexp-browser.desktop" \
       "$HOME/.local/share/kwin/scripts/dynamic_workspaces" \
-      "$HOME/.local/share/wallpapers/kdexp"
+      "$HOME/.local/share/wallpapers/kdexp" \
+      "$HOME/.gemini" \
+      "$HOME/.local/share/zed/threads" \
+      "$HOME/.local/state/zed"
 
 for f in "$DOTFILES/local/bin/"*; do
     [[ -f "$f" ]] && rm -f "$HOME/.local/bin/${f##*/}"

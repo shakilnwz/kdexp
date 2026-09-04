@@ -1,5 +1,6 @@
 # Zsh configuration for kdexp
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.kdexp}"
+export GEMINI_DIR="$DOTFILES_DIR/data/antigravity"
 if [[ -f "$DOTFILES_DIR/rc/aliases.sh" ]]; then
     source "$DOTFILES_DIR/rc/aliases.sh"
 elif [[ -f "$HOME/.config/kdexp/rc/aliases.sh" ]]; then

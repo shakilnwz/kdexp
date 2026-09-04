@@ -8,6 +8,26 @@ set -euo pipefail
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "==> Bootstrapping kdexp dotfiles from: $DOTFILES"
 
+# ── 0. KDE Plasma Environment Pre-check ───────────────────────────────────────
+echo "==> Verifying KDE Plasma installation..."
+kde_detected=false
+for kde_cmd in plasmashell kwin_x11 kwin_wayland kwriteconfig6 kwriteconfig5 startplasma-x11 startplasma-wayland; do
+  if command -v "$kde_cmd" >/dev/null 2>&1; then
+    kde_detected=true
+    echo "  ✓ Detected KDE component: $kde_cmd"
+    break
+  fi
+done
+
+if [[ "$kde_detected" != true ]]; then
+  echo "" >&2
+  echo "❌ Error: KDE Plasma does not appear to be installed on this system." >&2
+  echo "   kdexp is designed exclusively for Kubuntu / KDE Plasma desktop environments." >&2
+  echo "   Please install KDE Plasma (e.g. plasma-desktop, kwin-x11) before running bootstrap." >&2
+  echo "" >&2
+  exit 1
+fi
+
 # ── 1. Create User Directory Structure ────────────────────────────────────────
 mkdir -p "$HOME/.config" \
          "$HOME/.local/bin" \
@@ -15,7 +35,10 @@ mkdir -p "$HOME/.config" \
          "$HOME/.local/share/wallpapers" \
          "$HOME/.config/autostart" \
          "$DOTFILES/data/browser" \
-         "$DOTFILES/data/passwords"
+         "$DOTFILES/data/passwords" \
+         "$DOTFILES/data/antigravity" \
+         "$DOTFILES/data/zed/threads" \
+         "$DOTFILES/data/zed/state"
 
 # ── 2. Symlink User Binaries (~/.local/bin) ───────────────────────────────────
 echo "==> Linking user binaries to ~/.local/bin..."
@@ -82,6 +105,41 @@ if [[ -d "$DOTFILES/config/svi" ]]; then
   echo "  ✓ Linked: $svi_target"
 fi
 
+# Antigravity AI Data Confinement (~/.gemini -> ~/.kdexp/data/antigravity)
+echo "==> Configuring Antigravity data isolation..."
+mkdir -p "$DOTFILES/data/antigravity"
+gemini_target="$HOME/.gemini"
+if [[ -e $gemini_target && ! -L $gemini_target ]]; then
+  echo "  ✓ Migrating existing ~/.gemini into ~/.kdexp/data/antigravity..."
+  cp -a "$gemini_target/." "$DOTFILES/data/antigravity/" 2>/dev/null || true
+  rm -rf "$gemini_target"
+fi
+ln -nsf "$DOTFILES/data/antigravity" "$gemini_target"
+echo "  ✓ Confined Antigravity data: ~/.gemini -> ~/.kdexp/data/antigravity"
+
+# Zed ACP & Assistant Data Confinement (~/.local/share/zed/threads & ~/.local/state/zed)
+echo "==> Configuring Zed ACP & assistant data isolation..."
+mkdir -p "$DOTFILES/data/zed/threads" "$DOTFILES/data/zed/state"
+mkdir -p "$HOME/.local/share/zed" "$HOME/.local/state"
+
+zed_threads_target="$HOME/.local/share/zed/threads"
+if [[ -e $zed_threads_target && ! -L $zed_threads_target ]]; then
+  echo "  ✓ Migrating existing ~/.local/share/zed/threads into ~/.kdexp/data/zed/threads..."
+  cp -a "$zed_threads_target/." "$DOTFILES/data/zed/threads/" 2>/dev/null || true
+  rm -rf "$zed_threads_target"
+fi
+ln -nsf "$DOTFILES/data/zed/threads" "$zed_threads_target"
+echo "  ✓ Confined Zed threads: $zed_threads_target -> $DOTFILES/data/zed/threads"
+
+zed_state_target="$HOME/.local/state/zed"
+if [[ -e $zed_state_target && ! -L $zed_state_target ]]; then
+  echo "  ✓ Migrating existing ~/.local/state/zed into ~/.kdexp/data/zed/state..."
+  cp -a "$zed_state_target/." "$DOTFILES/data/zed/state/" 2>/dev/null || true
+  rm -rf "$zed_state_target"
+fi
+ln -nsf "$DOTFILES/data/zed/state" "$zed_state_target"
+echo "  ✓ Confined Zed state: $zed_state_target -> $DOTFILES/data/zed/state"
+
 # ── 4. Setup Shell Configuration (~/.bashrc) ──────────────────────────────────
 echo "==> Configuring Bash shell (~/.bashrc)..."
 BASHRC="$HOME/.bashrc"
@@ -145,14 +203,14 @@ fi
 
 if [[ -f "$DOTFILES/config/kde/kwinrulesrc" ]]; then
   kwinrules_target="$HOME/.config/kwinrulesrc"
-  # If kwinrulesrc doesn't exist, link it; if exists, append our rule group if not present
-  if [[ ! -f $kwinrules_target ]]; then
-    ln -nsf "$DOTFILES/config/kde/kwinrulesrc" "$kwinrules_target"
-    echo "  ✓ Linked KWin Rules: $kwinrules_target"
-  elif ! grep -q "Auto Maximize Main Work Applications" "$kwinrules_target"; then
-    cat "$DOTFILES/config/kde/kwinrulesrc" >> "$kwinrules_target"
-    echo "  ✓ Appended auto-maximize rules to existing $kwinrules_target"
+  kwinrules_source="$DOTFILES/config/kde/kwinrulesrc"
+  if [[ -f $kwinrules_target && ! -L $kwinrules_target ]]; then
+    if ! grep -q "Auto Maximize Main Work Applications" "$kwinrules_target"; then
+      mv "$kwinrules_target" "${kwinrules_target}.bak.$(date +%Y%m%d_%H%M%S)"
+    fi
   fi
+  ln -nsf "$kwinrules_source" "$kwinrules_target"
+  echo "  ✓ Linked KWin Rules: $kwinrules_target"
 fi
 
 if [[ -f "$DOTFILES/config/kde/setup-kde.sh" ]]; then
@@ -181,3 +239,46 @@ else
 fi
 echo ""
 echo "To apply shell changes in current terminal: source ~/.bashrc"
+
+# ── 8. Global Git Identity Configuration ──────────────────────────────────────
+if command -v git >/dev/null 2>&1; then
+  current_git_name="$(git config --global user.name 2>/dev/null || true)"
+  current_git_email="$(git config --global user.email 2>/dev/null || true)"
+
+  if [[ -z "$current_git_name" || -z "$current_git_email" ]]; then
+    echo ""
+    echo "==> Global Git Identity Setup:"
+    if [ -t 0 ]; then
+      if [[ -z "$current_git_name" ]]; then
+        read -rp "  Enter your Git full name (user.name): " input_name
+        if [[ -n "$input_name" ]]; then
+          git config --global user.name "$input_name"
+          echo "  ✓ Set git user.name to: $input_name"
+        else
+          echo "  ⚠️ Skipped setting git user.name."
+        fi
+      else
+        echo "  ✓ git user.name already configured: $current_git_name"
+      fi
+
+      if [[ -z "$current_git_email" ]]; then
+        read -rp "  Enter your Git email (user.email): " input_email
+        if [[ -n "$input_email" ]]; then
+          git config --global user.email "$input_email"
+          echo "  ✓ Set git user.email to: $input_email"
+        else
+          echo "  ⚠️ Skipped setting git user.email."
+        fi
+      else
+        echo "  ✓ git user.email already configured: $current_git_email"
+      fi
+    else
+      echo "  ℹ Non-interactive shell detected. Skipping interactive Git configuration."
+      echo "    Tip: You can configure your Git identity manually:"
+      echo "      git config --global user.name \"Your Name\""
+      echo "      git config --global user.email \"you@example.com\""
+    fi
+  else
+    echo "  ✓ Git identity already configured: $current_git_name <$current_git_email>"
+  fi
+fi
