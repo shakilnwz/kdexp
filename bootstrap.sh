@@ -105,6 +105,18 @@ if [[ -d "$DOTFILES/config/svi" ]]; then
   echo "  ✓ Linked: $svi_target"
 fi
 
+# xbindkeys (Mouse Wheel / Navigation Bindings)
+if [[ -d "$DOTFILES/config/xbindkeys" ]]; then
+  mkdir -p "$HOME/.config/xbindkeys"
+  xbindkeys_target="$HOME/.config/xbindkeys/config"
+  xbindkeys_source="$DOTFILES/config/xbindkeys/config"
+  if [[ -f $xbindkeys_target && ! -L $xbindkeys_target ]]; then
+    mv "$xbindkeys_target" "${xbindkeys_target}.bak.$(date +%Y%m%d_%H%M%S)"
+  fi
+  ln -nsf "$xbindkeys_source" "$xbindkeys_target"
+  echo "  ✓ Linked: $xbindkeys_target"
+fi
+
 # Antigravity AI Data Confinement (~/.gemini -> ~/.kdexp/data/antigravity)
 echo "==> Configuring Antigravity data isolation..."
 mkdir -p "$DOTFILES/data/antigravity"
@@ -195,11 +207,8 @@ if [[ -d "$DOTFILES/config/kde/wallpapers" ]]; then
   echo "  ✓ Linked Wallpapers: $HOME/.local/share/wallpapers/kdexp"
 fi
 
-if [[ -d "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces" ]]; then
-  mkdir -p "$HOME/.local/share/kwin/scripts"
-  ln -nsf "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces" "$HOME/.local/share/kwin/scripts/dynamic_workspaces"
-  echo "  ✓ Linked KWin Script: $HOME/.local/share/kwin/scripts/dynamic_workspaces"
-fi
+# Clean up legacy symlinks so scripts can be installed as concrete directories
+[[ -L "$HOME/.local/share/kwin/scripts/dynamic_workspaces" ]] && rm -f "$HOME/.local/share/kwin/scripts/dynamic_workspaces"
 
 if [[ -f "$DOTFILES/config/kde/kwinrulesrc" ]]; then
   kwinrules_target="$HOME/.config/kwinrulesrc"
@@ -223,7 +232,7 @@ echo "✨ kdexp bootstrap completed successfully!"
 echo ""
 echo "Recommended packages check:"
 missing_pkgs=()
-for bin in ghostty tmux fzf ripgrep starship xcape setxkbmap nvim obsidian; do
+for bin in ghostty tmux fzf ripgrep starship xcape setxkbmap xbindkeys nvim obsidian; do
   if ! command -v "$bin" >/dev/null 2>&1; then
     missing_pkgs+=("$bin")
   fi

@@ -43,19 +43,23 @@ KWIN_SCRIPTS_DIR="$HOME/.local/share/kwin/scripts"
 mkdir -p "$KWIN_SCRIPTS_DIR"
 
 if [[ -d "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces" ]]; then
-    ln -nsf "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces" "$KWIN_SCRIPTS_DIR/dynamic_workspaces"
-    echo "  ✓ Linked dynamic_workspaces script to $KWIN_SCRIPTS_DIR/dynamic_workspaces"
+    # Clean up legacy symlink if present so script can be installed as concrete directory
+    if [[ -L "$KWIN_SCRIPTS_DIR/dynamic_workspaces" ]]; then
+        rm -f "$KWIN_SCRIPTS_DIR/dynamic_workspaces"
+    fi
+
+    # Install as concrete directory
+    mkdir -p "$KWIN_SCRIPTS_DIR/dynamic_workspaces"
+    cp -rf "$DOTFILES/config/kde/kwin-scripts/dynamic_workspaces/." "$KWIN_SCRIPTS_DIR/dynamic_workspaces/"
+    echo "  ✓ Installed dynamic_workspaces script to $KWIN_SCRIPTS_DIR/dynamic_workspaces"
     
     # Register with KPackage tool if available
     if command -v kpackagetool6 >/dev/null 2>&1; then
-        kpackagetool6 --type KWin/Script -u "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || \
+        kpackagetool6 --type KWin/Script -r dynamic_workspaces >/dev/null 2>&1 || true
         kpackagetool6 --type KWin/Script -i "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || true
     elif command -v kpackagetool5 >/dev/null 2>&1; then
-        kpackagetool5 --type KWin/Script -u "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || \
+        kpackagetool5 --type KWin/Script -r dynamic_workspaces >/dev/null 2>&1 || true
         kpackagetool5 --type KWin/Script -i "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || true
-    elif command -v plasmapkg2 >/dev/null 2>&1; then
-        plasmapkg2 --type kwinscript -u "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || \
-        plasmapkg2 --type kwinscript -i "$KWIN_SCRIPTS_DIR/dynamic_workspaces" >/dev/null 2>&1 || true
     fi
 fi
 
@@ -72,6 +76,10 @@ set_kconfig "$KDEGLOBALS" "General" "accentColorFromWallpaper" "false"
 set_kconfig "$KDEGLOBALS" "General" "ColorScheme" "BreezeDark"
 
 echo "==> Configuring KDE Keyboard (Caps Lock -> Control modifier)..."
+KXKBRC="$KDE_CONFIG_DIR/kxkbrc"
+set_kconfig "$KXKBRC" "Layout" "Options" "caps:ctrl_modifier"
+set_kconfig "$KXKBRC" "Layout" "ResetOldOptions" "true"
+
 KCMINPUTRC="$KDE_CONFIG_DIR/kcminputrc"
 set_kconfig "$KCMINPUTRC" "Keyboard" "XkbOptions" "caps:ctrl_modifier"
 
@@ -128,7 +136,7 @@ echo "==> Configuring KDE Global Shortcuts & KWin Rules..."
 SHORTCUTSRC="$KDE_CONFIG_DIR/kglobalshortcutsrc"
 
 # KWin Window Management Shortcuts
-set_kconfig "$SHORTCUTSRC" "kwin" "Window Close" "Meta+Q\tAlt+F4,Alt+F4,Close Window"
+set_kconfig "$SHORTCUTSRC" "kwin" "Window Close" $'Meta+Q\tAlt+F4,Alt+F4,Close Window'
 set_kconfig "$SHORTCUTSRC" "kwin" "Switch to Next Desktop" "Meta+Right,none,Switch to Next Desktop"
 set_kconfig "$SHORTCUTSRC" "kwin" "Switch to Previous Desktop" "Meta+Left,none,Switch to Previous Desktop"
 set_kconfig "$SHORTCUTSRC" "kwin" "Window to Next Desktop" "Meta+Shift+Right,none,Window to Next Desktop"
@@ -165,6 +173,16 @@ fi
 # Apply Caps Lock remap if session is active
 if [[ -x "$HOME/.local/bin/remap-caps" ]]; then
     "$HOME/.local/bin/remap-caps" >/dev/null 2>&1 || true
+fi
+
+# Link and initialize xbindkeys configuration for Meta + Mouse Wheel navigation
+if [[ -f "$DOTFILES/config/xbindkeys/config" ]]; then
+    mkdir -p "$HOME/.config/xbindkeys"
+    ln -nsf "$DOTFILES/config/xbindkeys/config" "$HOME/.config/xbindkeys/config"
+    if command -v xbindkeys >/dev/null 2>&1 && [[ -n "${DISPLAY:-}" ]]; then
+        pkill -x xbindkeys 2>/dev/null || true
+        xbindkeys -f "$HOME/.config/xbindkeys/config" 2>/dev/null || true
+    fi
 fi
 
 echo "  ✓ KDE Plasma virtual desktops & shortcuts configured."

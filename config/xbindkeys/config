@@ -1,0 +1,19 @@
+# ==============================================================================
+# xbindkeys configuration for kdexp
+# Binds Meta + Mouse Wheel to Switch Workspace (Virtual Desktop)
+# ==============================================================================
+
+# Meta + Mouse Wheel Up -> Previous Workspace
+"workspace-step prev"
+    Mod4 + b:4
+
+# Meta + Mouse Wheel Down -> Next Workspace
+"workspace-step next"
+    Mod4 + b:5
+
+# Fallback with raw modifier mask (Mod4 = 0x40)
+"workspace-step prev"
+    m:0x40 + b:4
+
+"workspace-step next"
+    m:0x40 + b:5

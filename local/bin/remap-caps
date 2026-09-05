@@ -3,19 +3,51 @@
 # Safe for multi-user machines: runs purely within the current user's session.
 set -euo pipefail
 
-if [[ -n "${DISPLAY:-}" ]] && command -v setxkbmap >/dev/null 2>&1; then
-    # Map Caps Lock to act as Left Control on X11
-    setxkbmap -option caps:ctrl_modifier 2>/dev/null || true
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
-    # If xcape is installed, map standalone Control_L tap to Escape
-    if command -v xcape >/dev/null 2>&1; then
-        killall xcape 2>/dev/null || true
-        xcape -e 'Control_L=Escape'
-        if [[ -t 1 ]]; then
-            echo "✓ Caps Lock remapped: Tap = Escape, Hold = Control (xcape active)"
+apply_remap() {
+    if [[ -n "${DISPLAY:-}" ]] && command -v setxkbmap >/dev/null 2>&1; then
+        # Reset and set Caps Lock as Control
+        setxkbmap -option -option caps:ctrl_modifier 2>/dev/null || setxkbmap -option caps:ctrl_modifier 2>/dev/null || true
+
+        if command -v xcape >/dev/null 2>&1; then
+            pkill -x xcape 2>/dev/null || true
+            xcape -e 'Control_L=Escape'
+            if [[ -t 1 ]]; then
+                echo "✓ Caps Lock remapped: Tap = Escape, Hold = Control (xcape active)"
+            fi
+            return 0
         fi
-        exit 0
     fi
+    return 1
+}
+
+ensure_xbindkeys() {
+    if [[ -n "${DISPLAY:-}" ]] && command -v xbindkeys >/dev/null 2>&1; then
+        local config_file="$HOME/.config/xbindkeys/config"
+        if [[ -f "$config_file" ]] && ! pgrep -x xbindkeys >/dev/null 2>&1; then
+            xbindkeys -f "$config_file" 2>/dev/null || true
+        fi
+    fi
+}
+
+apply_remap || true
+ensure_xbindkeys || true
+
+# In background/autostart mode, re-apply after desktop keyboard daemon finishes initialization
+if [[ ! -t 1 ]]; then
+    (
+        for delay in 2 5 10; do
+            sleep "$delay"
+            if [[ -n "${DISPLAY:-}" ]] && command -v setxkbmap >/dev/null 2>&1; then
+                setxkbmap -option -option caps:ctrl_modifier 2>/dev/null || setxkbmap -option caps:ctrl_modifier 2>/dev/null || true
+                if command -v xcape >/dev/null 2>&1 && ! pgrep -x xcape >/dev/null 2>&1; then
+                    xcape -e 'Control_L=Escape' 2>/dev/null || true
+                fi
+            fi
+            ensure_xbindkeys || true
+        done
+    ) >/dev/null 2>&1 & disown
 fi
 
 if [[ -t 1 ]]; then

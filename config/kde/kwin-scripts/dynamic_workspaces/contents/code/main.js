@@ -1,6 +1,7 @@
 // Dynamic Workspaces KWin Script
 // Optimized for KDE Plasma 6 (Kubuntu 26.04) with backwards compatibility for Plasma 5.
 // Reconciles desktops: ensures always 1 trailing empty desktop, removes unused empty ones.
+// Auto-places new application windows on the next available workspace when current workspace is occupied.
 
 const MIN_DESKTOPS = 2;
 const LOG_LEVEL = 2; // 0 trace, 1 debug, 2 info
@@ -11,6 +12,7 @@ function trace(...args) { if (LOG_LEVEL <= 0) log(...args); }
 
 let guardDepth = 0;
 let dragInProgress = false;
+let isInitializing = true;
 const wiredClientIds = new Set();
 
 const isKde6 = typeof workspace !== "undefined" && typeof workspace.windowList === "function";
@@ -50,7 +52,29 @@ const compat = isKde6
 		},
 		clientDesktops: c => c.desktops || [],
 		setClientDesktops: (c, ds) => { c.desktops = ds; },
-		clientOnDesktop: (c, d) => Boolean(d && c.desktops && c.desktops.indexOf(d) !== -1),
+		clientOnDesktop: (c, d) => {
+			if (!d) return false;
+			if (!c.desktops || c.desktops.length === 0) {
+				return d === workspace.currentDesktop;
+			}
+			return c.desktops.indexOf(d) !== -1;
+		},
+		currentDesktopIndex: () => {
+			const ds = workspace.desktops;
+			return ds.indexOf(workspace.currentDesktop);
+		},
+		setCurrentDesktopByIndex: (idx) => {
+			const ds = workspace.desktops;
+			if (idx >= 0 && idx < ds.length) {
+				workspace.currentDesktop = ds[idx];
+			}
+		},
+		setClientDesktopByIndex: (c, idx) => {
+			const ds = workspace.desktops;
+			if (idx >= 0 && idx < ds.length) {
+				c.desktops = [ds[idx]];
+			}
+		},
 	}
 	: {
 		addDesktop: () => {
@@ -72,28 +96,98 @@ const compat = isKde6
 		deleteLastDesktop: () => {
 			workspace.removeDesktop(workspace.desktops - 1);
 		},
-		clientDesktops: c => (c.x11DesktopIds ? c.x11DesktopIds.map(id => ({ index: id - 1 })) : [{ index: c.desktop - 1 }]),
+		clientDesktops: c => (c.x11DesktopIds ? c.x11DesktopIds.map(id => ({ index: id - 1 })) : [{ index: (c.desktop || workspace.currentDesktop) - 1 }]),
 		setClientDesktops: (c, ds) => {
 			if (ds.length && ds[0]) {
 				c.desktop = ds[0].index + 1;
 			}
 		},
-		clientOnDesktop: (c, d) => Boolean(d && c.desktop === d.index + 1),
+		clientOnDesktop: (c, d) => {
+			if (!d) return false;
+			const desk = c.desktop || workspace.currentDesktop;
+			return desk === d.index + 1;
+		},
+		currentDesktopIndex: () => {
+			return workspace.currentDesktop - 1;
+		},
+		setCurrentDesktopByIndex: (idx) => {
+			workspace.currentDesktop = idx + 1;
+		},
+		setClientDesktopByIndex: (c, idx) => {
+			c.desktop = idx + 1;
+		},
 	};
 
-function desktopIsEmpty(idx) {
+function isNormalAppWindow(c) {
+	if (!c) return false;
+	if (c.skipPager || c.skipTaskbar || c.onAllDesktops) return false;
+	if (c.transient) return false;
+	if (typeof c.normalWindow !== "undefined" && !c.normalWindow) return false;
+	if (typeof c.specialWindow !== "undefined" && c.specialWindow) return false;
+	return true;
+}
+
+function desktopHasOtherWindows(idx, excludeClient) {
 	const desktops = compat.workspaceDesktops();
 	const d = desktops[idx];
-	if (!d) return true;
+	if (!d) return false;
 
 	const clients = compat.windowList();
+	const excludeId = excludeClient ? (isKde6 ? excludeClient.internalId : excludeClient.windowId) : null;
+
 	for (const c of clients) {
-		if (c.skipPager || c.onAllDesktops) continue;
+		if (!isNormalAppWindow(c)) continue;
+		const cid = isKde6 ? c.internalId : c.windowId;
+		if (excludeId && cid === excludeId) continue;
 		if (compat.clientOnDesktop(c, d)) {
-			return false;
+			return true;
 		}
 	}
-	return true;
+	return false;
+}
+
+function desktopIsEmpty(idx) {
+	return !desktopHasOtherWindows(idx, null);
+}
+
+function autoMoveToNextWorkspace(client) {
+	if (guardDepth > 0 || isInitializing) return;
+	if (!isNormalAppWindow(client)) return;
+
+	const currentIdx = compat.currentDesktopIndex();
+	if (currentIdx < 0) return;
+
+	// If current workspace already has other windows, auto-place this window on the next empty workspace
+	if (desktopHasOtherWindows(currentIdx, client)) {
+		guardDepth++;
+		try {
+			let targetIdx = -1;
+			const total = compat.desktopAmount();
+			for (let i = currentIdx + 1; i < total; i++) {
+				if (!desktopHasOtherWindows(i, client)) {
+					targetIdx = i;
+					break;
+				}
+			}
+
+			if (targetIdx === -1) {
+				compat.addDesktop();
+				targetIdx = compat.desktopAmount() - 1;
+			}
+
+			debug(`Auto-moving window to workspace ${targetIdx + 1}`);
+			compat.setClientDesktopByIndex(client, targetIdx);
+			compat.setCurrentDesktopByIndex(targetIdx);
+
+			if (isKde6 && typeof workspace.activeWindow !== "undefined") {
+				workspace.activeWindow = client;
+			} else if (typeof workspace.activeClient !== "undefined") {
+				workspace.activeClient = client;
+			}
+		} finally {
+			guardDepth--;
+		}
+	}
 }
 
 function ensureTrailingEmpty() {
@@ -212,10 +306,8 @@ function reconcile() {
 	compactPreservingIndex();
 }
 
-function onClientAdded(client) {
+function wireClient(client) {
 	if (!client || client.skipPager) return;
-
-	reconcile();
 
 	const id = isKde6 ? client.internalId : client.windowId;
 	if (id && wiredClientIds.has(id)) return;
@@ -245,6 +337,14 @@ function onClientAdded(client) {
 	}
 }
 
+function onClientAdded(client) {
+	if (!client || client.skipPager) return;
+
+	autoMoveToNextWorkspace(client);
+	reconcile();
+	wireClient(client);
+}
+
 if (typeof workspace !== "undefined") {
 	// Startup: ensure minimum desktops
 	while (compat.desktopAmount() < MIN_DESKTOPS) {
@@ -264,8 +364,11 @@ if (typeof workspace !== "undefined") {
 		});
 	}
 
-	// Connect existing and future windows
-	compat.windowList().forEach(onClientAdded);
+	// Connect existing windows without moving them
+	compat.windowList().forEach(wireClient);
+	isInitializing = false;
+
+	// Connect future windows with auto-move
 	compat.windowAddedSignal().connect(onClientAdded);
 
 	if (compat.windowRemovedSignal()) {

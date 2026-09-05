@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ripgrep \
     x11-xkb-utils \
     xcape \
+    xbindkeys \
     neovim \
     sudo \
     ca-certificates \
