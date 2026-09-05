@@ -1,0 +1,19 @@
+# ==============================================================================
+# xbindkeys configuration for kdexp
+# Binds Meta + Mouse Wheel to Karousel Previous/Next Window
+# ==============================================================================
+
+# Meta + Mouse Wheel Up -> Focus Left (Previous Window)
+"karousel-step left"
+    Mod4 + b:4
+
+# Meta + Mouse Wheel Down -> Focus Right (Next Window)
+"karousel-step right"
+    Mod4 + b:5
+
+# Fallback with raw modifier mask (Mod4 = 0x40)
+"karousel-step left"
+    m:0x40 + b:4
+
+"karousel-step right"
+    m:0x40 + b:5

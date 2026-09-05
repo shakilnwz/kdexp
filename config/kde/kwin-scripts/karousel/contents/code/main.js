@@ -339,12 +339,12 @@ const configDef = [
     {
         name: "gapsInnerHorizontal",
         type: "UInt",
-        default: 8,
+        default: 0,
     },
     {
         name: "gapsInnerVertical",
         type: "UInt",
-        default: 8,
+        default: 0,
     },
     {
         name: "stackOffsetX",
@@ -364,7 +364,7 @@ const configDef = [
     {
         name: "presetWidths",
         type: "String",
-        default: "50%, 100%",
+        default: "100%",
     },
     {
         name: "verticalResizeStep",

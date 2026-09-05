@@ -14,7 +14,9 @@ if [[ "${confirm,,}" != "y" ]]; then
     exit 0
 fi
 
-echo "==> Terminating running browser and sessionizer processes..."
+echo "==> Terminating running processes..."
+pkill -x xcape 2>/dev/null || true
+pkill -x xbindkeys 2>/dev/null || true
 pkill -f "kdexp-browser" 2>/dev/null || true
 pkill -f "herdr-sessionizer" 2>/dev/null || true
 pkill -f "tmux-sessionizer" 2>/dev/null || true
@@ -24,6 +26,15 @@ pkill -f "agy_acp_server" 2>/dev/null || true
 pkill -f "dev.zed.Zed" 2>/dev/null || true
 pkill -f "zed" 2>/dev/null || true
 
+echo "==> Uninstalling KWin scripts & effects..."
+if command -v kpackagetool6 >/dev/null 2>&1; then
+    kpackagetool6 --type KWin/Script -r karousel >/dev/null 2>&1 || true
+    kpackagetool6 --type KWin/Effect -r kwin4_effect_geometry_change >/dev/null 2>&1 || true
+fi
+rm -rf "$HOME/.local/share/kwin/scripts/karousel" \
+       "$HOME/.local/share/kwin/effects/kwin4_effect_geometry_change" \
+       "$HOME/.local/share/kwin/scripts/dynamic_workspaces"
+
 echo "==> Removing symlinks from ~/.config, ~/.local/bin, ~/.local/share/applications..."
 rm -f "$HOME/.config/starship.toml" \
       "$HOME/.config/ghostty/config" \
@@ -31,14 +42,12 @@ rm -f "$HOME/.config/starship.toml" \
       "$HOME/.config/svi" \
       "$HOME/.config/kwinrulesrc" \
       "$HOME/.config/autostart/remap-caps.desktop" \
+      "$HOME/.config/xbindkeys/config" \
       "$HOME/.local/share/applications/herdr-sessionizer.desktop" \
       "$HOME/.local/share/applications/herdr-dual.desktop" \
       "$HOME/.local/share/applications/tmux-sessionizer.desktop" \
       "$HOME/.local/share/applications/herdr.desktop" \
       "$HOME/.local/share/applications/kdexp-browser.desktop" \
-      "$HOME/.local/share/kwin/scripts/karousel" \
-      "$HOME/.local/share/kwin/effects/kwin4_effect_geometry_change" \
-      "$HOME/.local/share/kwin/scripts/dynamic_workspaces" \
       "$HOME/.local/share/wallpapers/kdexp" \
       "$HOME/.gemini" \
       "$HOME/.local/share/zed/threads" \
@@ -48,6 +57,7 @@ for f in "$DOTFILES/local/bin/"*; do
     [[ -f "$f" ]] && rm -f "$HOME/.local/bin/${f##*/}"
 done
 rm -f "$HOME/.local/bin/bat" "$HOME/.local/bin/fd"
+rmdir "$HOME/.config/xbindkeys" 2>/dev/null || true
 
 echo "==> Cleaning ~/.bashrc managed block..."
 if [[ -f "$HOME/.bashrc" ]]; then

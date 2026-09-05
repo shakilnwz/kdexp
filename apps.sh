@@ -23,7 +23,7 @@ install_core_apt() {
     sudo apt install -y \
         build-essential git curl wget jq unzip \
         tmux fzf bat fd-find ripgrep \
-        x11-xkb-utils xcape neovim \
+        x11-xkb-utils xcape xbindkeys neovim \
         software-properties-common ca-certificates \
         fontconfig \
         qml6-module-org-kde-notifications || sudo apt install -y qml-module-org-kde-notifications || true
